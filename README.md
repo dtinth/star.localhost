@@ -1,24 +1,21 @@
 # *.localhost
 
-A script to manage local dev domains on my Mac. I run Caddy on localhost and use this to map `api.localhost`, `web.localhost`, etc. to different local services. Just edit a config file and run the script—it generates the Caddyfile and reloads Caddy automatically.
+A Bun script to manage localhost subdomains.
 
-## How I use it
+My setup:
 
-I keep a TOML config in `~/.config/star.localhost/config.toml` describing my local services. Then:
+- I run Caddy on `localhost:80` [using Homebrew](https://formulae.brew.sh/formula/caddy)
+- I use the [`update.ts`](update.ts) script set up virtual host from `api.localhost`, `web.localhost`, to different services
 
-```bash
-./update.ts
-```
+## Usage
 
-This generates `~/.local/share/star.localhost/Caddyfile` and auto-reloads Caddy if you set up a hook.
-
-My main Caddyfile at `/opt/homebrew/etc/Caddyfile` just imports the generated one:
+Configure Caddy to load `~/.local/share/star.localhost/Caddyfile`:
 
 ```
 import /Users/dtinth/.local/share/star.localhost/Caddyfile
 ```
 
-## Config example
+Create TOML config file `~/.config/star.localhost/config.toml`:
 
 ```toml
 [subdomains.project1]
@@ -33,6 +30,19 @@ host = "example.com"
 postupdate = "caddy reload --config /opt/homebrew/etc/Caddyfile"
 ```
 
+Run the script:
+
+```bash
+./update.ts
+```
+
+The script will:
+
+- Generate `~/.local/share/star.localhost/Caddyfile`
+- Run the configured hook
+
+## Config format
+
 - `subdomains.<name>.upstream`: Where to proxy traffic to
 - `subdomains.<name>.host`: Control the Host header sent upstream
   - `true` (default): Use the upstream's hostname
@@ -40,3 +50,11 @@ postupdate = "caddy reload --config /opt/homebrew/etc/Caddyfile"
   - `"example.com"`: Use a specific custom string
 - `subdomains.<name>.cors`: Enable CORS from all origins
 - `hooks.postupdate`: Run this after generating the config (I use it to reload Caddy)
+
+## My setup
+
+I set this alias in my Fish shell, so that I can easily change my config:
+
+```fish
+alias --save config_localhost 'vim ~/.config/star.localhost/config.toml && $HOME/ghq/github.com/dtinth/star.localhost/update.ts'
+```
